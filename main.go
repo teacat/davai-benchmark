@@ -19,7 +19,7 @@ import (
 	"github.com/gramework/gramework"
 	"github.com/julienschmidt/httprouter"
 	"github.com/labstack/echo"
-	davai "github.com/teacat/go-davai"
+	"github.com/teacat/davai"
 	"github.com/valyala/fasthttp"
 	"github.com/zenazn/goji"
 )
@@ -37,105 +37,92 @@ func serverStartup() {
 		"/",
 		"/users",
 		"/user/:name",
-		"/noise/noise/noise",
-		"/noise/noise/noise/noise",
-		"/noise/noise/noise/noise/noise",
+		"/user/:name/:name2",
+		"/user/:name/:name2/:name3",
 	})
 	go httprouterServer([]string{
 		"/",
 		"/users",
 		"/user/:name",
-		"/noise/noise/noise",
-		"/noise/noise/noise/noise",
-		"/noise/noise/noise/noise/noise",
+		"/user/:name/:name2",
+		"/user/:name/:name2/:name3",
 	})
 	go martiniServer([]string{
 		"/",
 		"/users",
 		"/user/:name",
-		"/noise/noise/noise",
-		"/noise/noise/noise/noise",
-		"/noise/noise/noise/noise/noise",
+		"/user/:name/:name2",
+		"/user/:name/:name2/:name3",
 	})
 	go gojiServer([]string{
 		"/",
 		"/users",
 		"/user/:name",
-		"/noise/noise/noise",
-		"/noise/noise/noise/noise",
-		"/noise/noise/noise/noise/noise",
+		"/user/:name/:name2",
+		"/user/:name/:name2/:name3",
 	})
 	go patServer([]string{
 		"/",
 		"/users",
 		"/user/:name",
-		"/noise/noise/noise",
-		"/noise/noise/noise/noise",
-		"/noise/noise/noise/noise/noise",
+		"/user/:name/:name2",
+		"/user/:name/:name2/:name3",
 	})
 	go fasthttpServer([]string{
 		"/",
 		"/users",
 		"/user/:name",
-		"/noise/noise/noise",
-		"/noise/noise/noise/noise",
-		"/noise/noise/noise/noise/noise",
+		"/user/:name/:name2",
+		"/user/:name/:name2/:name3",
 	})
 	go ginServer([]string{
 		"/",
 		"/users",
 		"/user/:name",
-		"/noise/noise/noise",
-		"/noise/noise/noise/noise",
-		"/noise/noise/noise/noise/noise",
+		"/user/:name/:name2",
+		"/user/:name/:name2/:name3",
 	})
 	go muxServer([]string{
 		"/",
 		"/users",
 		"/user/{name}",
-		"/noise/noise/noise",
-		"/noise/noise/noise/noise",
-		"/noise/noise/noise/noise/noise",
+		"/user/{name}/{name2}",
+		"/user/{name}/{name2}/{name3}",
 	})
 	go grameworkServer([]string{
 		"/",
 		"/users",
 		"/user/:name",
-		"/noise/noise/noise",
-		"/noise/noise/noise/noise",
-		"/noise/noise/noise/noise/noise",
+		"/user/:name/:name2",
+		"/user/:name/:name2/:name3",
 	})
 	go httptreemuxServer([]string{
 		"/",
 		"/users",
 		"/user/:name",
-		"/noise/noise/noise",
-		"/noise/noise/noise/noise",
-		"/noise/noise/noise/noise/noise",
+		"/user/:name/:name2",
+		"/user/:name/:name2/:name3",
 	})
 	go echoServer([]string{
 		"/",
 		"/users",
 		"/user/:name",
-		"/noise/noise/noise",
-		"/noise/noise/noise/noise",
-		"/noise/noise/noise/noise/noise",
+		"/user/:name/:name2",
+		"/user/:name/:name2/:name3",
 	})
 	go davaiServer([]string{
 		"/",
 		"/users",
 		"/user/{name}",
-		"/noise/noise/noise",
-		"/noise/noise/noise/noise",
-		"/noise/noise/noise/noise/noise",
+		"/user/{name}/{name2}",
+		"/user/{name}/{name2}/{name3}",
 	})
 	go beegoServer([]string{
 		"/",
 		"/users",
 		"/user/:name",
-		"/noise/noise/noise",
-		"/noise/noise/noise/noise",
-		"/noise/noise/noise/noise/noise",
+		"/user/:name/:name2",
+		"/user/:name/:name2/:name3",
 	})
 
 	log.Printf("等待所有伺服器啟動⋯")
@@ -145,14 +132,17 @@ func serverStartup() {
 var (
 	testURLs = []string{
 		// /
-		"/",
+		//"/",
 		// /users
-		"/users",
+		//"/users",
 		// /user/:name
-		"/user/yamiodymel",
+		//"/user/yamiodymel",
+		// /user/:name/:name2
+		"/user/yamiodymel/admin",
 	}
 	testServers = []string{
 		"davai",
+		"gramework",
 		//"nethttp",
 		"httprouter",
 		"martini",
@@ -161,7 +151,6 @@ var (
 		//"fasthttp",
 		"gin",
 		"mux",
-		"gramework",
 		"httptreemux",
 		"echo",
 		"beego",
@@ -172,6 +161,7 @@ func serverBenchmark() {
 	for _, v := range testServers {
 		for _, vv := range testURLs {
 			run(v, vv)
+			<-time.After(time.Millisecond * 100)
 		}
 	}
 }
@@ -184,7 +174,7 @@ func main() {
 
 func serverReport() {
 	// Create a csv file
-	f, err := os.Create("./people.csv")
+	f, err := os.Create("./benchmark.csv")
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -278,8 +268,6 @@ func run(server string, path string) {
 		port = beegoPort
 	}
 
-	log.Printf("開始測試 %s 伺服器效能。", server)
-
 	out, err := exec.Command("/Users/YamiOdymel/go/bin/go-wrk", "-c", "5", "-d", "1", "-redir", fmt.Sprintf("http://localhost%s%s", port, path)).Output()
 	if err != nil {
 		log.Fatal(err)
@@ -288,6 +276,7 @@ func run(server string, path string) {
 	parsed["RouterName"] = server
 	parsed["Location"] = path
 	results = append(results, parsed)
+	fmt.Printf("%s, %s \n", server, path)
 }
 
 // https://stackoverflow.com/a/30483899/5203951
@@ -315,8 +304,11 @@ Slowest Request:	(?P<SlowestRequestTime>.*)
 Number of Errors:	(?P<NumberOfError>.*)`)
 	m := r.FindStringSubmatch(res)
 	n := r.SubexpNames()
+	v := mapSubexpNames(m, n)
 
-	fmt.Printf("%+v", res)
+	//fmt.Printf("%+v", res)
+
+	fmt.Printf("%s (reqs/s) | ", v["RequestsPerSecond"])
 
 	return mapSubexpNames(m, n)
 }
